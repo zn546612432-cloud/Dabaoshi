@@ -3,22 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>合成大宝石 · Dabaoshi</title>
+  <meta name="theme-color" content="#17111d">
+  <title>万圣宝石夜 · 高家声 × Jimmy</title>
   <link rel="stylesheet" href="style.css">
   <script src="game.js" defer></script>
 </head>
 <body>
-<main>
-  <header><div><h1>合成大宝石</h1><p>让相同的宝石相遇，合成更大的宝石。</p></div><button id="restart" type="button">重新开始</button></header>
-  <div class="layout">
-    <div class="board"><canvas id="game" width="420" height="620" aria-label="合成大宝石游戏区域"></canvas><div id="overlay" class="overlay" hidden><div class="dialog" role="status"><h2>宝石堆满了</h2><p id="final"></p><button id="again" type="button">再玩一次</button></div></div></div>
-    <aside class="side">
-      <div class="stats"><div class="card"><span>本局得分</span><strong id="score">0</strong></div><div class="card"><span>最高纪录</span><strong id="best">0</strong></div></div>
-      <div class="card next"><div><span>下一颗</span><strong id="next-name"></strong></div><div class="gem-preview" id="preview"></div></div>
-      <div class="card help"><h2>怎么玩</h2><ol><li>移动鼠标或手指，选择落点。</li><li>点击或轻触棋盘，让宝石落下。</li><li>相同宝石碰撞会合成，并获得分数。</li><li>宝石在警戒线上方停留太久，游戏结束。</li></ol><p>键盘：← → 移动，空格投放，R 重新开始。</p></div>
-    </aside>
-  </div>
-</main>
+  <main class="app">
+    <header class="masthead">
+      <div><p class="kicker">HALLOWEEN GEM NIGHT</p><h1>万圣宝石夜</h1><p class="lead">高家声 × Jimmy · 双人协作合成</p></div>
+      <button id="restart" type="button">重新开始</button>
+    </header>
+    <div class="layout">
+      <section class="playfield" aria-label="游戏区域">
+        <div class="board">
+          <canvas id="game" width="440" height="780" aria-label="万圣宝石夜游戏画布"></canvas>
+          <div id="overlay" class="overlay" hidden>
+            <div class="dialog" role="status" aria-live="polite">
+              <p class="kicker">THE NIGHT IS OVER</p><h2>宝石堆满了</h2>
+              <p id="final-score"></p><button id="again" type="button">再玩一次</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <aside class="sidebar">
+        <div class="score-row">
+          <div class="panel score"><span>协作得分</span><strong id="score">0</strong></div>
+          <div class="panel score"><span>最高纪录</span><strong id="best">0</strong></div>
+        </div>
+        <div class="panel actor-card player"><div class="avatar">🐺</div><div><span>你控制 · 高家声</span><strong>狼人投放</strong><small>移动落点，点击释放</small></div><div class="next-gem" id="player-next"></div></div>
+        <div class="panel actor-card ai"><div class="avatar">🦇</div><div><span>AI 队友 · Jimmy</span><strong>吸血鬼投掷</strong><small id="ai-status">正在寻找落点…</small></div><div class="next-gem" id="ai-next"></div></div>
+        <div class="panel guide">
+          <h2>玩法</h2>
+          <p>两人共用一座宝石塔。相同等级的宝石碰撞会合成，直到第 11 级。Jimmy 会自动寻找合适的落点投掷。</p>
+          <p>点击或轻触画布投放。鼠标移动或手指拖动可瞄准；键盘 ← → 移动，空格投放，R 重开。</p>
+          <p>宝石在金色警戒线上方停留太久，游戏结束。</p>
+        </div>
+        <div class="panel collection"><h2>11 级万圣宝石</h2><div id="gem-list" class="gem-list"></div></div>
+      </aside>
+    </div>
+  </main>
 </body>
 </html>
 
