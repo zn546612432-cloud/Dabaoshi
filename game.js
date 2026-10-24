@@ -39,10 +39,12 @@
     jimmy: Array.from({length: 8}, (_, i) => image(`sprites/jimmy-empty/${String(i + 1).padStart(2, "0")}.png`))
   };
   const clamp = (v, low, high) => Math.max(low, Math.min(high, v));
+  const RARE_DROP_CHANCE = .01; // 1%; change this to .005 for 0.5% or .02 for 2%.
   const randomSmall = () => {
     const high = Math.min(8, 5 + Math.floor((level - 1) / 2));
     const n = Math.random();
-    return Math.min(high, Math.floor(n * (high + 1)));
+    if (n < 1 - RARE_DROP_CHANCE) return Math.floor(n / (1 - RARE_DROP_CHANCE) * 5);
+    return 5 + Math.floor(Math.random() * (high - 4));
   };
   const loaded = a => a && a.complete && a.naturalWidth > 0;
   const hulls = typeof GEM_HULLS !== "undefined" ? GEM_HULLS : [];

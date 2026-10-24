@@ -3,7 +3,7 @@
 无需安装依赖。用浏览器打开 `index.html` 即可游玩。
 
 - 玩家控制狼人高家声：鼠标移动或手指拖动瞄准，点击或松开投放；键盘 ← / → 瞄准，空格投放。
-- 吸血鬼 Jimmy 在较宽的范围内自动飞行并寻找落点；两名角色相碰会弹开并闪出火花。第一关双方都可能投放 1–6 级宝石，后续关卡投放更频繁，等级范围也逐渐扩大。
+- 吸血鬼 Jimmy 在较宽的范围内自动飞行并寻找落点；两名角色相碰会弹开并闪出火花。双方通常投放 1–5 级宝石，6 级及以上合计只有 1% 的概率；后续关卡投放更频繁，稀有等级范围也逐渐扩大。
 - 11 级透明万圣节宝石依次是糖果、南瓜、幽灵、蝙蝠、女巫月亮、魔药、血月、夜星、南瓜王、女巫王冠与幻影王冠。同级碰撞合成并计分。
 - 宝石跟随角色手部动作，并从当时的手部位置沿弧线飞出；落入坩埚后受重力、倾斜内壁与弧形盆底约束。
 - 1 级合成 2 级得 10 分，2 级合成 3 级得 20 分，之后每级翻倍。第一关需要累计 5,000 分；进度满后坩埚与锅内宝石轻晃、宝石消除，再进入更难的下一关。
@@ -14,3 +14,5 @@
 音频素材均为 CC0：[循环鬼屋环境音](https://opengameart.org/content/dark-cavern-ambient)（Paul Wortmann）、[短促合成音](https://opengameart.org/content/pop-effect-sounds)（trezegames）、[清关音效](https://opengameart.org/content/magic-spell-sfx)（JaggedStone）、[柔和心跳](https://opengameart.org/content/heartbeat-sounds)（bart）。
 
 精灵图处理使用仓库内的 [sprite-pipeline 技能](.agents/skills/sprite-pipeline/SKILL.md)（来源：[openai/plugins](https://github.com/openai/plugins)），并用 `tools/extract_sprite_components.py` 按透明连通区域提取完整角色，避免固定网格裁掉耳朵、翅膀或手臂。运行 `node smoke.cjs` 可验证投放、合成、计分、AI 和重开。
+
+调整投放概率：打开 `game.js`，搜索 `RARE_DROP_CHANCE = .01`。`.01` 表示 1%，改成 `.005` 是 0.5%，改成 `.02` 是 2%。普通的 1–5 级在剩余概率中平均出现。
