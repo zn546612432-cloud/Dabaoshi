@@ -39,11 +39,16 @@
     jimmy: Array.from({length: 8}, (_, i) => image(`sprites/jimmy-empty/${String(i + 1).padStart(2, "0")}.png`))
   };
   const clamp = (v, low, high) => Math.max(low, Math.min(high, v));
-  const RARE_DROP_CHANCE = .01; // 1%; change this to .005 for 0.5% or .02 for 2%.
+  const DROP_CHANCE_4 = .09;      // 9%
+  const DROP_CHANCE_5 = .009;     // 0.9%
+  const DROP_CHANCE_6_PLUS = .001; // 0.1%; shared by unlocked tiers 6 and above
   const randomSmall = () => {
     const high = Math.min(8, 5 + Math.floor((level - 1) / 2));
     const n = Math.random();
-    if (n < 1 - RARE_DROP_CHANCE) return Math.floor(n / (1 - RARE_DROP_CHANCE) * 5);
+    const commonChance = 1 - DROP_CHANCE_4 - DROP_CHANCE_5 - DROP_CHANCE_6_PLUS;
+    if (n < commonChance) return Math.floor(n / commonChance * 3);
+    if (n < commonChance + DROP_CHANCE_4) return 3;
+    if (n < commonChance + DROP_CHANCE_4 + DROP_CHANCE_5) return 4;
     return 5 + Math.floor(Math.random() * (high - 4));
   };
   const loaded = a => a && a.complete && a.naturalWidth > 0;

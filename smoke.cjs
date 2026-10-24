@@ -71,12 +71,10 @@ drop(220); advance(1400); drop(220); advance(1600);
 assert.ok(snapshot().levelTransition > 0 || snapshot().level >= 2, "threshold starts cauldron clear");
 advance(1800);
 assert.equal(snapshot().level, 2, "clear advances to next level");
-scope.Math.random = () => .98;
-element("#restart").listeners.click();
-drop(220);
-assert.equal(snapshot().launches[0].level, 4, "the fifth tier remains a common drop");
-scope.Math.random = () => .999;
-element("#restart").listeners.click();
-drop(220);
-assert.equal(snapshot().launches[0].level, 5, "the sixth tier remains a rare level-one drop");
-console.log("PASS 11 silhouettes, common 1–5 and rare 6 drops, 10-point merge, 5000-point level, clear, AI, restart, keyboard");
+for (const [roll, tier] of [[.1, 0], [.4, 1], [.7, 2], [.95, 3], [.995, 4], [.9995, 5]]) {
+  scope.Math.random = () => roll;
+  element("#restart").listeners.click();
+  drop(220);
+  assert.equal(snapshot().launches[0].level, tier, `roll ${roll} selects tier ${tier + 1}`);
+}
+console.log("PASS 11 silhouettes, weighted 1–6 drops, 10-point merge, 5000-point level, clear, AI, restart, keyboard");
