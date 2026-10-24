@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>合成大宝石 · Dabaoshi</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+<main>
+  <header><div><h1>合成大宝石</h1><p>让相同的宝石相遇，合成更大的宝石。</p></div><button id="restart" type="button">重新开始</button></header>
+  <div class="layout">
+    <div class="board"><canvas id="game" width="420" height="620" aria-label="合成大宝石游戏区域"></canvas><div id="overlay" class="overlay" hidden><div class="dialog" role="status"><h2>宝石堆满了</h2><p id="final"></p><button id="again" type="button">再玩一次</button></div></div></div>
+    <aside class="side">
+      <div class="stats"><div class="card"><span>本局得分</span><strong id="score">0</strong></div><div class="card"><span>最高纪录</span><strong id="best">0</strong></div></div>
+      <div class="card next"><div><span>下一颗</span><strong id="next-name"></strong></div><div class="gem-preview" id="preview"></div></div>
+      <div class="card help"><h2>怎么玩</h2><ol><li>移动鼠标或手指，选择落点。</li><li>点击或轻触棋盘，让宝石落下。</li><li>相同宝石碰撞会合成，并获得分数。</li><li>宝石在警戒线上方停留太久，游戏结束。</li></ol><p>键盘：← → 移动，空格投放，R 重新开始。</p></div>
+    </aside>
+  </div>
+</main>
+</body>
+</html>
+
