@@ -23,7 +23,8 @@
     "gem-5-witch-moon.png", "gem-6-potion.png", "gem-7-blood-moon.png", "gem-8-star.png",
     "gem-9-jack-o-lantern.png", "gem-10-witch-crown.png", "gem-11-phantom-crown.png"
   ];
-  const GEM_RADII = [21, 27, 34, 41, 50, 61, 72, 86, 96, 106, 116];
+  // Gem artwork and collision hulls share these radii.
+  const GEM_RADII = [13.6, 17.6, 21.6, 26.4, 32, 39.2, 46.4, 55.2, 61.6, 68, 74.4];
   const GEM_COLORS = ["#ffba64", "#ff9346", "#a4eaff", "#c18aff", "#d8abff", "#77ffd0", "#ff647d", "#7ab9ff", "#ffa32b", "#ec75ff", "#c8a5ff"];
   const image = file => {
     const art = new Image();
