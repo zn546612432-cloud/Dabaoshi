@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#120d1b">
+  <title>万圣宝石夜</title>
+  <link rel="preload" as="image" href="assets/halloween-background.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="gem-hulls.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main class="board" aria-label="万圣节宝石合成游戏">
+    <canvas id="game" width="440" height="780" aria-label="点击或拖动选择落点，松开投放宝石"></canvas>
+    <div class="hud">
+      <div class="score-plaque"><span>得分</span><strong id="score">0</strong></div>
+      <div class="score-plaque best"><span>最佳</span><strong id="best">0</strong></div>
+      <button id="restart" class="restart" type="button" aria-label="重新开始" title="重新开始">↻</button>
+    </div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="result" role="status" aria-live="polite">
+        <div class="result-icon" aria-hidden="true">✦</div>
+        <h1>魔法坩埚装满了</h1>
+        <p id="final-score">得分 0</p>
+        <button id="again" type="button">再玩一次</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
