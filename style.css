@@ -7,3 +7,4 @@ button{border:1px solid #f6dca1;border-radius:9px;padding:11px 16px;background:l
 @media(max-width:760px){.app{padding:16px 12px 28px}.layout{grid-template-columns:minmax(0,440px);justify-content:center;gap:16px}.sidebar{grid-template-columns:1fr 1fr}.score-row,.guide,.collection{grid-column:1/-1}.actor-card{grid-template-columns:36px 1fr 38px;padding:10px}.avatar{font-size:23px}.actor-card strong{font-size:14px}.next-gem{width:35px;height:35px}.masthead button{font-size:12px;padding:9px 10px}}
 @media(max-width:430px){.sidebar{grid-template-columns:1fr}.actor-card{grid-column:1/-1}.score strong{font-size:24px}.masthead h1{font-size:30px}}
 
+.avatar{height:48px;width:48px;background-size:cover;background-position:center;border-radius:50%;border:1px solid #d8b98a66;background-color:#271f30}.avatar-wolf{background-image:url("assets/gao-wolf.png")}.avatar-jimmy{background-image:url("assets/jimmy-vampire.png")}

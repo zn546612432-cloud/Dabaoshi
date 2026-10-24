@@ -8,6 +8,11 @@
     aiStatus: document.querySelector("#ai-status"), list: document.querySelector("#gem-list"),
     overlay: document.querySelector("#overlay"), final: document.querySelector("#final-score")
   };
+  const sprites={wolf:null,jimmy:null};
+  if(typeof Image!=="undefined"){
+    sprites.wolf=new Image();sprites.wolf.src="assets/gao-wolf.png";
+    sprites.jimmy=new Image();sprites.jimmy.src="assets/jimmy-vampire.png";
+  }
   const W = 440, H = 780, LEFT = 25, RIGHT = 415, FLOOR = 749;
   const DANGER = 245, DROP_Y = 183, GRAVITY = 1250, STEP = 1 / 120;
   const GEMS = [
@@ -19,13 +24,13 @@
     {name:"魔药翡翠",color:"#64bd9f",r:38,sides:6,symbol:"✧"},
     {name:"血月红宝",color:"#e36f80",r:45,sides:8,symbol:"✦"},
     {name:"夜星蓝钻",color:"#73b9ef",r:53,sides:9,symbol:"✶"},
-    {name:"幻光欧泊",color:"#d29fe8",r:61,sides:10,symbol:"✧"},
+    {name:"骷髅欧泊",color:"#d29fe8",r:61,sides:10,symbol:"✧"},
     {name:"秘境王冠",color:"#f4ca7c",r:70,sides:11,symbol:"♛"},
     {name:"万圣大宝石",color:"#fff0b7",r:80,sides:12,symbol:"✹"}
   ];
   const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const chooseSmall = () => { const n=Math.random(); return n < .34 ? 0 : n < .62 ? 1 : n < .84 ? 2 : 3; };
-  let gems=[], particles=[], score=0, best=0, playerNext=0, aiNext=0, aim=220;
+  let gems=[], particles=[], launches=[], score=0, best=0, playerNext=0, aiNext=0, aim=220;
   let wolfX=220, jimmyX=350, jimmyTarget=350, aiTimer=3.5, cooldown=0;
   let dangerClock=0, elapsed=0, combo=0, lastMerge=-10, over=false, serial=0;
   let accumulator=0, lastFrame=performance.now(), shake=0, statusTimer=0;
@@ -80,7 +85,7 @@
     ui.overlay.hidden=false;
   }
   function reset(){
-    gems=[];particles=[];score=0;combo=0;lastMerge=-10;playerNext=chooseSmall();aiNext=chooseSmall();
+    gems=[];particles=[];launches=[];score=0;combo=0;lastMerge=-10;playerNext=chooseSmall();aiNext=chooseSmall();
     aim=220;wolfX=220;jimmyX=350;jimmyTarget=350;aiTimer=3.5;cooldown=0;
     dangerClock=0;elapsed=0;over=false;shake=0;statusTimer=0;accumulator=0;
     ui.overlay.hidden=true;setStatus("正在寻找落点…",2);updateUI();
@@ -94,7 +99,9 @@
   }
   function playerDrop(){
     if(over||cooldown>0)return;
-    if(spawn(playerNext,aim,"player")){playerNext=chooseSmall();cooldown=.48;updateUI();}
+    launches.push({owner:"player",level:playerNext,x0:wolfX+18,y0:110,x1:aim,y1:DROP_Y,
+      t:0,duration:.38,arc:-13});
+    playerNext=chooseSmall();cooldown=.52;updateUI();
   }
   function chooseAiTarget(){
     let bestX=220,bestValue=-Infinity;
@@ -116,9 +123,21 @@
     if(aiTimer<1.1&&aiTimer+dt>=1.1){jimmyTarget=chooseAiTarget();setStatus("锁定落点！",1.1);}
     jimmyX+=(jimmyTarget-jimmyX)*Math.min(1,dt*3.4);
     if(aiTimer<=0){
-      if(spawn(aiNext,jimmyTarget,"ai")){aiNext=chooseSmall();updateUI();setStatus("Jimmy 投出宝石！",1.4);}
+      launches.push({owner:"ai",level:aiNext,x0:jimmyX-25,y0:91,x1:jimmyTarget,y1:DROP_Y,
+        t:0,duration:.52,arc:-38});
+      aiNext=chooseSmall();updateUI();setStatus("Jimmy 投出宝石！",1.4);
       aiTimer=3.8+Math.random()*.7;
     }
+  }
+  function updateLaunches(dt){
+    for(const launch of launches)launch.t+=dt/launch.duration;
+    const ready=launches.filter(l=>l.t>=1);
+    launches=launches.filter(l=>l.t<1);
+    for(const l of ready){if(!over)spawn(l.level,l.x1,l.owner);}
+  }
+  function launchPosition(l){
+    const t=clamp(l.t,0,1),ease=1-Math.pow(1-t,3);
+    return {x:l.x0+(l.x1-l.x0)*ease,y:l.y0+(l.y1-l.y0)*t*t+l.arc*Math.sin(Math.PI*t)};
   }
 
   function burst(x,y,level){
@@ -156,7 +175,7 @@
   }
   function physics(dt){
     elapsed+=dt;cooldown=Math.max(0,cooldown-dt);
-    aiUpdate(dt);
+    aiUpdate(dt);updateLaunches(dt);
     wolfX+=(aim-wolfX)*Math.min(1,dt*12);
     if(statusTimer>0){statusTimer-=dt;if(statusTimer<=0)ui.aiStatus.textContent="正在寻找落点…";}
     for(const b of gems){
@@ -226,6 +245,32 @@
       ctx.fillStyle=i%4===0?"#f2c98a99":"#ffffff55";
       ctx.beginPath();ctx.arc(x,y,i%7===0?1.5:.7,0,Math.PI*2);ctx.fill();
     }
+    ctx.strokeStyle="#c6a9ac55";ctx.lineWidth=1;
+    for(const cx of [LEFT+8,RIGHT-8]){
+      const sign=cx<W/2?1:-1;
+      for(let i=0;i<5;i++){
+        ctx.beginPath();ctx.moveTo(cx,28);
+        ctx.lineTo(cx+sign*(35+i*12),30+i*16);ctx.stroke();
+      }
+      for(let ring=1;ring<=3;ring++){
+        ctx.beginPath();
+        for(let i=0;i<5;i++){
+          const px=cx+sign*(35+i*12)*ring/3,py=28+(2+i*16)*ring/3;
+          if(i===0)ctx.moveTo(px,py);else ctx.quadraticCurveTo(px-sign*6,py+6,px,py);
+        }
+        ctx.stroke();
+      }
+    }
+    for(const [bx,by] of [[101,119],[156,150],[275,136]]){
+      ctx.fillStyle="#0f0d1b";ctx.beginPath();
+      ctx.moveTo(bx,by);ctx.quadraticCurveTo(bx-8,by-12,bx-17,by-6);
+      ctx.quadraticCurveTo(bx-23,by-9,bx-31,by-2);
+      ctx.quadraticCurveTo(bx-15,by-4,bx-4,by+4);
+      ctx.quadraticCurveTo(bx,by+9,bx+4,by+4);
+      ctx.quadraticCurveTo(bx+15,by-4,bx+31,by-2);
+      ctx.quadraticCurveTo(bx+23,by-9,bx+17,by-6);
+      ctx.quadraticCurveTo(bx+8,by-12,bx,by);ctx.fill();
+    }
     ctx.fillStyle="#1b1520";ctx.fillRect(0,143,W,25);
     ctx.fillStyle="#372735";ctx.fillRect(LEFT,DANGER,RIGHT-LEFT,FLOOR-DANGER);
     const pit=ctx.createLinearGradient(0,DANGER,0,FLOOR);
@@ -243,12 +288,79 @@
       ctx.beginPath();ctx.moveTo(edge,0);ctx.lineTo(edge,H);ctx.stroke();
       for(let y=55;y<H;y+=78){path([{x:edge,y:y-11},{x:edge+7,y},{x:edge,y:y+11},{x:edge-7,y}]);ctx.stroke();}
     }
+    for(const px of [56,385]){
+      ctx.fillStyle="#b86b3c55";ctx.beginPath();ctx.ellipse(px,FLOOR-15,22,21,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#e4ab6b55";ctx.lineWidth=2;
+      for(const dx of [-10,0,10]){ctx.beginPath();ctx.moveTo(px+dx,FLOOR-35);ctx.quadraticCurveTo(px+dx-7,FLOOR-15,px+dx,FLOOR+3);ctx.stroke();}
+      ctx.fillStyle="#1d1720";path([{x:px-11,y:FLOOR-19},{x:px-5,y:FLOOR-25},{x:px-3,y:FLOOR-17}]);ctx.fill();
+      path([{x:px+3,y:FLOOR-17},{x:px+5,y:FLOOR-25},{x:px+11,y:FLOOR-19}]);ctx.fill();
+    }
     ctx.fillStyle="#9e7857";ctx.fillRect(LEFT,FLOOR,RIGHT-LEFT,H-FLOOR);
     ctx.fillStyle="#d5b77e";ctx.fillRect(LEFT,FLOOR,RIGHT-LEFT,4);
     ctx.setLineDash([3,7]);ctx.strokeStyle=dangerClock>0?"#ffbda1":"#dbc28b99";ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(LEFT,DANGER);ctx.lineTo(RIGHT,DANGER);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle="#ead1a4";ctx.font="12px Georgia, serif";ctx.textAlign="left";ctx.fillText("✦ 警戒线",35,DANGER-10);
     for(let i=0;i<10;i++)star(41+(i*103%358),250+(i*71%475),i%3===0?4:2,"#f6e1b688");
+  }
+  function drawMotif(level,x,y,r){
+    ctx.save();ctx.translate(x,y);ctx.scale(r/34,r/34);
+    ctx.lineWidth=2;ctx.strokeStyle="#342638";ctx.fillStyle="#fff6de";
+    if(level===0){
+      path([{x:-12,y:-5},{x:-22,y:-10},{x:-19,y:0},{x:-22,y:10},{x:-12,y:5}]);ctx.fill();
+      path([{x:12,y:-5},{x:22,y:-10},{x:19,y:0},{x:22,y:10},{x:12,y:5}]);ctx.fill();
+      ctx.beginPath();ctx.ellipse(0,0,12,9,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.strokeStyle="#e77a73";ctx.beginPath();ctx.moveTo(-4,-8);ctx.lineTo(4,8);ctx.stroke();
+    }else if(level===1){
+      ctx.fillStyle="#fff0b4";ctx.beginPath();ctx.ellipse(0,1,15,13,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#c46131";for(const q of [-7,0,7]){ctx.beginPath();ctx.moveTo(q,-10);ctx.quadraticCurveTo(q-5,1,q,13);ctx.stroke();}
+      ctx.fillStyle="#3b2431";path([{x:-10,y:-2},{x:-4,y:-7},{x:-3,y:0}]);ctx.fill();
+      path([{x:3,y:0},{x:4,y:-7},{x:10,y:-2}]);ctx.fill();
+      path([{x:-8,y:5},{x:-3,y:8},{x:0,y:5},{x:4,y:8},{x:9,y:5},{x:5,y:11},{x:-5,y:11}]);ctx.fill();
+    }else if(level===2){
+      ctx.fillStyle="#fff9e8";ctx.beginPath();ctx.moveTo(-13,13);ctx.lineTo(-13,-3);ctx.arc(0,-3,13,Math.PI,0);ctx.lineTo(13,13);ctx.lineTo(8,9);ctx.lineTo(3,13);ctx.lineTo(-2,9);ctx.lineTo(-7,13);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#34415b";for(const q of [-5,5]){ctx.beginPath();ctx.ellipse(q,0,2.5,4,0,0,Math.PI*2);ctx.fill();}
+    }else if(level===3){
+      ctx.fillStyle="#2f203b";path([{x:-2,y:-2},{x:-8,y:-9},{x:-13,y:-5},{x:-24,y:-12},{x:-19,y:5},{x:-11,y:2},{x:-7,y:9},{x:0,y:5},{x:7,y:9},{x:11,y:2},{x:19,y:5},{x:24,y:-12},{x:13,y:-5},{x:8,y:-9},{x:2,y:-2}]);ctx.fill();
+      ctx.fillStyle="#ffe8ac";ctx.beginPath();ctx.arc(-3,0,1.5,0,Math.PI*2);ctx.arc(3,0,1.5,0,Math.PI*2);ctx.fill();
+    }else if(level===4){
+      ctx.fillStyle="#302042";path([{x:-11,y:10},{x:1,y:-21},{x:15,y:9}]);ctx.fill();
+      ctx.fillStyle="#f1d69a";ctx.fillRect(-19,9,38,5);ctx.fillRect(-10,4,23,4);
+      ctx.fillStyle="#c7834e";ctx.fillRect(-1,4,7,5);
+    }else if(level===5){
+      ctx.fillStyle="#f7e7d3";ctx.fillRect(-7,-20,14,8);ctx.fillRect(-4,-25,8,5);
+      ctx.beginPath();ctx.moveTo(-11,-12);ctx.lineTo(11,-12);ctx.lineTo(15,13);ctx.quadraticCurveTo(0,21,-15,13);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle="#55c6a3";ctx.beginPath();ctx.moveTo(-12,4);ctx.quadraticCurveTo(0,-2,12,4);ctx.lineTo(10,14);ctx.quadraticCurveTo(0,19,-10,14);ctx.closePath();ctx.fill();
+      star(0,6,5,"#fff8ce");
+    }else if(level===6){
+      ctx.fillStyle="#ffe7ce";ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ca6174";ctx.beginPath();ctx.arc(7,-5,14,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff5d8";path([{x:-15,y:16},{x:-9,y:12},{x:-11,y:21}]);ctx.fill();
+      path([{x:8,y:13},{x:14,y:10},{x:11,y:20}]);ctx.fill();
+    }else if(level===7){
+      ctx.fillStyle="#fff5dc";for(let i=0;i<8;i++){
+        const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*6,Math.sin(a)*6);
+        ctx.lineTo(Math.cos(a-.15)*22,Math.sin(a-.15)*22);
+        ctx.lineTo(Math.cos(a+.15)*22,Math.sin(a+.15)*22);ctx.closePath();ctx.fill();
+      }
+      ctx.fillStyle="#8ed9ff";ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();
+    }else if(level===8){
+      ctx.fillStyle="#fff1e0";ctx.beginPath();ctx.ellipse(0,-3,16,16,0,0,Math.PI*2);ctx.fill();
+      ctx.fillRect(-10,5,20,13);
+      ctx.fillStyle="#584068";for(const q of [-7,7]){ctx.beginPath();ctx.ellipse(q,-4,4,5,0,0,Math.PI*2);ctx.fill();}
+      path([{x:-3,y:6},{x:0,y:1},{x:3,y:6}]);ctx.fill();
+      for(const q of [-6,0,6])ctx.fillRect(q-1,13,2,5);
+    }else if(level===9){
+      ctx.fillStyle="#fff0b8";path([{x:-19,y:-11},{x:-10,y:0},{x:-5,y:-17},{x:0,y:-2},{x:7,y:-18},{x:11,y:1},{x:19,y:-11},{x:16,y:14},{x:-16,y:14}]);ctx.fill();ctx.stroke();
+      ctx.fillStyle="#c86979";for(const q of [-10,0,10]){ctx.beginPath();ctx.arc(q,6,3,0,Math.PI*2);ctx.fill();}
+    }else{
+      ctx.fillStyle="#2b1d3c";path([{x:-11,y:-4},{x:-23,y:-16},{x:-19,y:6},{x:-12,y:0},{x:-8,y:9},{x:0,y:4},{x:8,y:9},{x:12,y:0},{x:19,y:6},{x:23,y:-16},{x:11,y:-4}]);ctx.fill();
+      ctx.fillStyle="#ffe7a3";ctx.beginPath();ctx.ellipse(0,2,12,13,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#4a2c42";path([{x:-8,y:0},{x:-3,y:-4},{x:-2,y:2}]);ctx.fill();
+      path([{x:2,y:2},{x:3,y:-4},{x:8,y:0}]);ctx.fill();
+      path([{x:-6,y:7},{x:0,y:10},{x:6,y:7},{x:4,y:12},{x:-4,y:12}]);ctx.fill();
+      star(0,-21,6,"#fff4bc");
+    }
+    ctx.restore();
   }
   function drawGem(b,alpha=1,scale=1){
     const spec=GEMS[b.level],r=b.r*scale,display={...b,r};
@@ -278,13 +390,17 @@
         star(b.x+Math.cos(a)*r*.77,b.y+Math.sin(a)*r*.77,4,"#fff6ce");
       }
     }
-    ctx.fillStyle="#fff6dd";ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.shadowColor="#291b35";ctx.shadowBlur=4;
-    ctx.font="bold "+Math.max(15,r*.68)+"px Georgia, serif";
-    ctx.fillText(spec.symbol,b.x,b.y+1);
+    drawMotif(b.level,b.x,b.y,r);
     ctx.restore();
   }
   function wolf(x,y,t){
+    const art=sprites.wolf;
+    if(art&&art.complete&&art.naturalWidth){
+      ctx.save();ctx.translate(x,y+Math.sin(t*3)*2);
+      const throwPose=launches.find(l=>l.owner==="player");
+      ctx.rotate(Math.sin(t*2)*.015-(throwPose ? .13*Math.sin(Math.PI*clamp(throwPose.t,0,1)) : 0));
+      ctx.drawImage(art,-48,-72,100,150);ctx.restore();return;
+    }
     ctx.save();ctx.translate(x,y+Math.sin(t*3)*2);
     ctx.fillStyle="#342e49";path([{x:-25,y:24},{x:-33,y:44},{x:0,y:47},{x:27,y:39},{x:20,y:22}]);ctx.fill();
     ctx.fillStyle="#9bc8d7";path([{x:-19,y:21},{x:-24,y:41},{x:17,y:41},{x:19,y:20}]);ctx.fill();
@@ -300,6 +416,19 @@
     ctx.restore();
   }
   function jimmy(x,y,t){
+    const art=sprites.jimmy;
+    if(art&&art.complete&&art.naturalWidth){
+      ctx.save();ctx.translate(x,y+Math.sin(t*4.5)*5);
+      const flap=Math.sin(t*12);
+      ctx.scale(1+flap*.035,1-flap*.025);
+      const throwPose=launches.find(l=>l.owner==="ai");
+      ctx.rotate(Math.sin(t*5)*.018+(throwPose ? .12*Math.sin(Math.PI*clamp(throwPose.t,0,1)) : 0));
+      ctx.fillStyle="#5b2449";ctx.strokeStyle="#bf6c81";ctx.lineWidth=1.5;
+      const wingY=flap*13;
+      path([{x:-31,y:-5},{x:-70,y:-29+wingY},{x:-60,y:8+wingY},{x:-43,y:4}]);ctx.fill();ctx.stroke();
+      path([{x:31,y:-5},{x:70,y:-29+wingY},{x:60,y:8+wingY},{x:43,y:4}]);ctx.fill();ctx.stroke();
+      ctx.drawImage(art,-65,-49,130,119);ctx.restore();return;
+    }
     const flap=Math.sin(t*12)*.55;
     ctx.save();ctx.translate(x,y+Math.sin(t*4.5)*6);
     ctx.fillStyle="#321e3d";
@@ -317,6 +446,14 @@
     ctx.restore();
   }
 
+  function drawLaunch(l){
+    const pos=launchPosition(l),tail=launchPosition({...l,t:Math.max(0,l.t-.16)});
+    ctx.save();ctx.strokeStyle=GEMS[l.level].color;ctx.globalAlpha=.42;ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(tail.x,tail.y);ctx.lineTo(pos.x,pos.y);ctx.stroke();
+    ctx.globalAlpha=1;
+    drawGem({x:pos.x,y:pos.y,r:GEMS[l.level].r*(.7+.3*l.t),level:l.level,angle:l.t*2.1});
+    ctx.restore();
+  }
   function render(){
     ctx.save();
     if(shake>0)ctx.translate(Math.sin(elapsed*47)*shake*3,Math.cos(elapsed*39)*shake*2);
@@ -335,9 +472,12 @@
     wolf(wolfX,88,elapsed);
     jimmy(jimmyX,61,elapsed);
     if(!over){
-      drawGem({x:wolfX+28,y:121,r:GEMS[playerNext].r*.78,level:playerNext,angle:elapsed*.3},cooldown>0?.52:1);
-      drawGem({x:jimmyX+22,y:101,r:GEMS[aiNext].r*.72,level:aiNext,angle:-elapsed*.45});
+      if(!launches.some(l=>l.owner==="player"))
+        drawGem({x:wolfX+18,y:110,r:GEMS[playerNext].r*.72,level:playerNext,angle:elapsed*.3});
+      if(!launches.some(l=>l.owner==="ai"))
+        drawGem({x:jimmyX-25,y:91,r:GEMS[aiNext].r*.68,level:aiNext,angle:-elapsed*.45});
     }
+    for(const l of launches)drawLaunch(l);
     ctx.textAlign="left";ctx.textBaseline="alphabetic";
     ctx.fillStyle="#f4daa8";ctx.font="bold 12px system-ui";
     ctx.fillText("高家声 · 你",35,25);
@@ -376,4 +516,8 @@
   ui.list.innerHTML=GEMS.map((g,i)=>"<div><i style='background:"+g.color+"'></i><span><b>"+(i+1)+".</b> "+g.name+"</span></div>").join("");
   reset();requestAnimationFrame(frame);
 })();
+
+
+
+
 
