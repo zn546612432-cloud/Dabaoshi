@@ -101,7 +101,7 @@
   }
   function makeGem(level, x, y, owner) {
     return {id: ++idCounter, level, x, y, r: GEM_RADII[level], angle: (Math.random() - .5) * .12,
-      vx: 0, vy: 0, omega: (Math.random() - .5) * .45, age: 0, owner, impactReady: true};
+      vx: 0, vy: 0, omega: (Math.random() - .5) * .45, age: 0, owner, impactReady: true, touched: false};
   }
   function updateScore() {
     ui.score.textContent = score.toLocaleString("zh-CN");
@@ -214,6 +214,7 @@
     shake = Math.min(.9, shake + .15 + level * .035);
     if (level >= GEM_RADII.length) return null;
     const child = makeGem(level, x, y, a.owner);
+    child.touched = true;
     child.vx = (a.vx + b.vx) * .23; child.vy = -130;
     child.omega = (a.omega + b.omega) * .2;
     return child;
@@ -253,6 +254,7 @@
         g.omega *= .8;
       }
       if (bottom > 0) {
+        g.touched = true;
         const slope = (floorY(bottomX + 1) - floorY(bottomX - 1)) / 2;
         g.x += slope * bottom / (1 + slope * slope);
         g.y -= bottom / (1 + slope * slope);
@@ -340,6 +342,7 @@
         for (let j = i + 1; j < gems.length; j++) {
           const b = gems[j]; if (removed.has(b.id)) continue;
           const hit = collision(a, b); if (!hit) continue;
+          a.touched = true; b.touched = true;
           if (a.level === b.level) {
             removed.add(a.id); removed.add(b.id);
             const child = merge(a, b); if (child) added.push(child);
@@ -362,8 +365,8 @@
     if (removed.size) gems = gems.filter(g => !removed.has(g.id)).concat(added);
     advanceEffects(dt);
     shake = Math.max(0, shake - dt * 1.5);
-    const settled = gems.filter(g => g.age > .6 && Math.hypot(g.vx, g.vy) < 140);
-    const top = settled.length ? Math.min(...settled.flatMap(g => vertices(g).map(p => p.y))) : Infinity;
+    const inPot = gems.filter(g => g.touched);
+    const top = inPot.length ? Math.min(...inPot.flatMap(g => vertices(g).map(p => p.y))) : Infinity;
     const nearFull = top < WARNING_Y;
     warningLevel += ((nearFull ? 1 : 0) - warningLevel) * Math.min(1, dt * 3);
     audio?.setWarning(nearFull && levelTransition <= 0);
@@ -523,7 +526,7 @@
       jimmyX = aiX; aiTarget = aiX - 43;
     }, seedDangerGemForTest() {
       const g = makeGem(0, 220, 400, "test");
-      g.age = 2; g.impactReady = false; gems.push(g);
+      g.touched = true; gems.push(g);
     }, snapshot: () => ({
       gems: gems.map(g => ({x: g.x, y: g.y, r: g.r, level: g.level, owner: g.owner})),
       launches: launches.map(l => ({owner: l.owner, level: l.level, t: l.t})),
