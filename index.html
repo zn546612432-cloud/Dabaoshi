@@ -2,45 +2,34 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#17111d">
-  <title>万圣宝石夜 · 高家声 × Jimmy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#120d1b">
+  <title>万圣宝石夜</title>
+  <link rel="preload" as="image" href="assets/halloween-background.png">
   <link rel="stylesheet" href="style.css">
+  <script src="gem-hulls.js" defer></script>
+  <script src="audio.js" defer></script>
   <script src="game.js" defer></script>
 </head>
 <body>
-  <main class="app">
-    <header class="masthead">
-      <div><p class="kicker">HALLOWEEN GEM NIGHT</p><h1>万圣宝石夜</h1><p class="lead">高家声 × Jimmy · 双人协作合成</p></div>
-      <button id="restart" type="button">重新开始</button>
-    </header>
-    <div class="layout">
-      <section class="playfield" aria-label="游戏区域">
-        <div class="board">
-          <canvas id="game" width="440" height="780" aria-label="万圣宝石夜游戏画布"></canvas>
-          <div id="overlay" class="overlay" hidden>
-            <div class="dialog" role="status" aria-live="polite">
-              <p class="kicker">THE NIGHT IS OVER</p><h2>宝石堆满了</h2>
-              <p id="final-score"></p><button id="again" type="button">再玩一次</button>
-            </div>
-          </div>
-        </div>
-      </section>
-      <aside class="sidebar">
-        <div class="score-row">
-          <div class="panel score"><span>协作得分</span><strong id="score">0</strong></div>
-          <div class="panel score"><span>最高纪录</span><strong id="best">0</strong></div>
-        </div>
-        <div class="panel actor-card player"><div class="avatar avatar-wolf" aria-hidden="true"></div><div><span>你控制 · 高家声</span><strong>狼人投放</strong><small>移动落点，点击释放</small></div><div class="next-gem" id="player-next"></div></div>
-        <div class="panel actor-card ai"><div class="avatar avatar-jimmy" aria-hidden="true"></div><div><span>AI 队友 · Jimmy</span><strong>吸血鬼投掷</strong><small id="ai-status">正在寻找落点…</small></div><div class="next-gem" id="ai-next"></div></div>
-        <div class="panel guide">
-          <h2>玩法</h2>
-          <p>两人共用一座宝石塔。相同等级的宝石碰撞会合成，直到第 11 级。Jimmy 会自动寻找合适的落点投掷。</p>
-          <p>点击或轻触画布投放。鼠标移动或手指拖动可瞄准；键盘 ← → 移动，空格投放，R 重开。</p>
-          <p>宝石在金色警戒线上方停留太久，游戏结束。</p>
-        </div>
-        <div class="panel collection"><h2>11 级万圣宝石</h2><div id="gem-list" class="gem-list"></div></div>
-      </aside>
+  <main class="board" aria-label="万圣节宝石合成游戏">
+    <canvas id="game" width="440" height="780" aria-label="点击或拖动选择落点，松开投放宝石"></canvas>
+    <div class="hud">
+      <div class="left-hud">
+        <div class="score-plaque"><span>得分</span><strong id="score">0</strong></div>
+        <div class="level-panel"><span id="level-label">第 1 关</span><div id="level-progress" class="level-progress" role="progressbar" aria-label="关卡进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progress-fill"></i></div></div>
+      </div>
+      <div class="score-plaque best"><span>最佳</span><strong id="best">0</strong></div>
+      <button id="sound" class="sound" type="button" aria-label="开启声音" title="开启声音" aria-pressed="false">♪</button>
+      <button id="restart" class="restart" type="button" aria-label="重新开始" title="重新开始">↻</button>
+    </div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="result" role="status" aria-live="polite">
+        <div class="result-icon" aria-hidden="true">✦</div>
+        <h1>魔法坩埚装满了</h1>
+        <p id="final-score">得分 0</p>
+        <button id="again" type="button">再玩一次</button>
+      </div>
     </div>
   </main>
 </body>

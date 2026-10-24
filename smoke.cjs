@@ -1,56 +1,78 @@
-const fs=require("node:fs");
-const vm=require("node:vm");
-const assert=require("node:assert/strict");
-const elements=new Map(),windowEvents={},frames=[],storage=new Map();
-function el(key){
-  if(!elements.has(key))elements.set(key,{
-    textContent:"",innerHTML:"",hidden:false,style:{},listeners:{},
-    addEventListener(name,fn){this.listeners[name]=fn;},
-    getBoundingClientRect(){return {left:0,width:440};},
-    setPointerCapture(){}
+const fs = require("node:fs");
+const vm = require("node:vm");
+const assert = require("node:assert/strict");
+
+const elements = new Map(), events = {}, frames = [], storage = new Map();
+function element(id) {
+  if (!elements.has(id)) elements.set(id, {
+    hidden: false, textContent: "", listeners: {}, style: {}, attributes: {},
+    addEventListener(name, fn) { this.listeners[name] = fn; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    getBoundingClientRect() { return {left: 0, width: 440}; },
+    setPointerCapture() {}
   });
-  return elements.get(key);
+  return elements.get(id);
 }
-const gradient=()=>({addColorStop(){}});
-const ctx=new Proxy({}, {get(target,key){
-  if(key==="createLinearGradient"||key==="createRadialGradient")return gradient;
-  return target[key]||(()=>{});
-}});
-el("#game").getContext=()=>ctx;
-let now=0;
-const scope={
-  document:{querySelector:el},window:{addEventListener(n,fn){windowEvents[n]=fn;}},
-  performance:{now:()=>now},requestAnimationFrame:fn=>frames.push(fn),
-  localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},
-  Math:Object.assign(Object.create(Math),{random:()=>0}),Set,Map,Number,String
+const ctx = new Proxy({}, {get(target, key) { return target[key] || (() => {}); }});
+element("#game").getContext = () => ctx;
+let now = 0;
+const scope = {
+  document: {querySelector: element},
+  window: {addEventListener(name, fn) { events[name] = fn; }},
+  location: {search: "?debug"},
+  URLSearchParams,
+  Image: class {constructor() { this.complete = false; this.naturalWidth = 0; }},
+  performance: {now: () => now},
+  requestAnimationFrame: fn => frames.push(fn),
+  localStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
+  Math: Object.assign(Object.create(Math), {random: () => 0}),
+  Set, Map, Number, String
 };
-const source=fs.readFileSync("game.js","utf8").replace(
-  "  reset();requestAnimationFrame(frame);",
-  "  globalThis.__test={snapshot:()=>({gems,launches,score,playerNext,aiNext,aim,over}),sat,make,add:(level,x,y)=>gems.push(make(level,x,y,\"test\"))};reset();requestAnimationFrame(frame);"
-);
-vm.runInNewContext(source,scope);
-function advance(ms){for(let n=0;n<ms;n+=16){now+=16;const f=frames.shift();assert.ok(f);f(now);}}
-function drop(x){const ev={clientX:x,pointerId:1,preventDefault(){}};el("#game").listeners.pointerdown(ev);el("#game").listeners.pointerup(ev);}
-assert.equal((el("#gem-list").innerHTML.match(/<div>/g)||[]).length,11);
-assert.equal(scope.__test.snapshot().score,0);
-const a=scope.__test.make(0,100,300,"test"),b=scope.__test.make(0,105,305,"test"),c=scope.__test.make(0,330,300,"test");
-assert.ok(scope.__test.sat(a,b),"polygon overlap found");
-assert.equal(scope.__test.sat(a,c),null,"separate polygons do not collide");
-drop(210);assert.equal(scope.__test.snapshot().launches.length,1,"release is animated before physics spawn");advance(1600);drop(210);advance(1600);
-assert.ok(scope.__test.snapshot().score>0,"matching gems merge and score");
-assert.ok(Number(el("#best").textContent)>0,"best score updated");
-el("#restart").listeners.click();
-assert.equal(scope.__test.snapshot().score,0);
-assert.ok(Number(el("#best").textContent)>0,"best score survives restart");
+vm.runInNewContext(fs.readFileSync("gem-hulls.js", "utf8"), scope);
+vm.runInNewContext(fs.readFileSync("game.js", "utf8"), scope);
+const snapshot = () => scope.window.__dabaoshi.snapshot();
+function advance(ms) {
+  for (let elapsed = 0; elapsed < ms; elapsed += 16) {
+    now += 16;
+    const callback = frames.shift();
+    assert.ok(callback, "animation loop stays alive");
+    callback(now);
+  }
+}
+function drop(x) {
+  const event = {clientX: x, pointerId: 1, pointerType: "mouse", preventDefault() {}};
+  element("#game").listeners.pointerdown(event);
+  element("#game").listeners.pointerup(event);
+}
+
+assert.equal(scope.window.__dabaoshi.snapshot().score, 0);
+assert.equal(snapshot().gemCount, 11, "all eleven Halloween gem levels are available");
+drop(220);
+assert.equal(snapshot().launches.length, 1, "player gem has flight animation");
+advance(1400);
+drop(220);
+advance(1600);
+assert.equal(snapshot().score, 10, "first merge awards exactly ten points");
+assert.equal(snapshot().levelProgress, 10, "merge reward advances the level bar");
+assert.equal(snapshot().levelTarget, 5000, "first level requires five thousand points");
+assert.ok(Number(element("#best").textContent) > 0, "best score updates");
 advance(4500);
-assert.ok(scope.__test.snapshot().gems.some(g=>g.owner==="ai"),"Jimmy throws without player input");
-el("#restart").listeners.click();
-const block=scope.__test.make(0,210,183,"test");block.r=150;scope.__test.snapshot().gems.push(block);
-drop(210);advance(500);
-assert.equal(el("#overlay").hidden,false,"blocked entrance ends game");
-el("#again").listeners.click();
-assert.equal(el("#overlay").hidden,true,"restart clears failure");
-windowEvents.keydown({key:"ArrowLeft",code:"ArrowLeft",preventDefault(){}});
-windowEvents.keydown({key:" ",code:"Space",preventDefault(){}});
-assert.equal(scope.__test.snapshot().launches.length,1,"keyboard starts throw animation");advance(500);assert.ok(scope.__test.snapshot().gems.length>0,"keyboard drop works");
-console.log("PASS 11 levels, polygon SAT, player drop, merge, score, best, AI throw, failure, restart, keyboard, render loop");
+assert.ok(snapshot().aiTimer > 0, "Jimmy's automatic throw timer resets");
+assert.ok(snapshot().gems.some(g => g.owner === "ai"), "Jimmy contributes gems");
+element("#restart").listeners.click();
+assert.equal(snapshot().score, 0, "restart clears score");
+assert.ok(Number(element("#best").textContent) > 0, "best score survives restart");
+events.keydown({key: "ArrowLeft", code: "ArrowLeft", preventDefault() {}});
+events.keydown({key: " ", code: "Space", preventDefault() {}});
+assert.equal(snapshot().launches.length, 1, "keyboard launches gem");
+element("#restart").listeners.click();
+scope.window.__dabaoshi.setProgressForTest(4990);
+drop(220); advance(1400); drop(220); advance(1600);
+assert.ok(snapshot().levelTransition > 0 || snapshot().level >= 2, "threshold starts cauldron clear");
+advance(1800);
+assert.equal(snapshot().level, 2, "clear advances to next level");
+scope.Math.random = () => .999;
+element("#restart").listeners.click();
+drop(220);
+assert.equal(snapshot().launches[0].level, 5, "level one can throw a sixth-tier gem");
+console.log("PASS 11 silhouettes, 1–6 opening drops, 10-point merge, 5000-point level, clear, AI, restart, keyboard");
